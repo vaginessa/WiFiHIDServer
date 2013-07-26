@@ -1,25 +1,29 @@
 package org.catrobat.wifihidserver;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 import org.catrobat.catroid.io.Command;
+import org.catrobat.catroid.io.Confirmation.ConfirmationState;
 import org.catrobat.wifihidserver.Connection.Instruction;
 
 
 public class InputHandler extends Thread implements Instruction{
 	
 	private Thread thisThread;
-	private ArrayList<Command> instructionList;
+	private HashMap<Command, Connection> instructionList;
 	private KeyBoard keyboard;
 	
-	public InputHandler(KeyBoard keyboard_) {
-		keyboard = keyboard_;
+	public InputHandler(KeyBoard keyboard) {
+		this.keyboard = keyboard;
 		this.setName("InputHandler");
 	}
 	
 	public void run() {
 		thisThread = this;
-		instructionList = new ArrayList<Command>();
+		instructionList = new HashMap<Command, Connection>();
 		while(thisThread == this){
 			if (instructionList.size() == 0) {
 				try {
@@ -28,25 +32,37 @@ public class InputHandler extends Thread implements Instruction{
 					e.printStackTrace();
 				}
 			} else {
-				handleCommand(instructionList.get(0));
-				instructionList.remove(0);
+				Iterator<Entry<Command, Connection>> it = instructionList.entrySet().iterator();
+				Command command = it.next().getKey();
+				
+				if (!handleCommand(command)) {
+					instructionList.get(command).confirm(ConfirmationState.ILLEGAL_COMMAND);
+				} else {
+					instructionList.get(command).confirm(ConfirmationState.COMMAND_SEND_SUCCESSFULL);
+				}
+				instructionList.remove(command);
 			}
 		}
 	}
 	
-	public void handleCommand(Command command) {
+	public boolean handleCommand(Command command) {
 		switch (command.getCommandType()) {
 		case SINGLE_KEY:
-			keyboard.setKeyToHandle(command.getKey());
+			if (!keyboard.setKeyToHandle(command.getKey())) {
+				return false;
+			}
 			break;
 		case KEY_COMBINATION:
-			keyboard.setKeyToHandle(command.getKeyComb());
+			if (!keyboard.setKeyToHandle(command.getKeyComb())) {
+				return false;
+			}
 			break;
 		case MOUSE:			
 			break;
 		default:
 			break;
-		}			
+		}	
+		return true;
 	}
 	
 	public void onIncoming(Command input, Connection connection){
@@ -63,7 +79,7 @@ public class InputHandler extends Thread implements Instruction{
 			}
 			System.out.print("' (ASCII)\n");
 		}		
-		//instructionList.add(input);
+		instructionList.put(input, connection);
 	}
 	
 	public void stopThread(){
@@ -71,7 +87,7 @@ public class InputHandler extends Thread implements Instruction{
 	}
     
     public interface KeyToHandle{
-    	public void setKeyToHandle(int key);
-    	public void setKeyToHandle(int[] key);
+    	public boolean setKeyToHandle(int key);
+    	public boolean setKeyToHandle(int[] key);
     }
 }

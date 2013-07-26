@@ -15,11 +15,11 @@ public class ConnectionHandler extends Thread implements UserHandling{
 	private ArrayList<Connection>connectionList;
 	private static final int port = 63000;
 	
-	public ConnectionHandler(InputHandler inputHandler_, StartUI ui, Server server_){
-		inputHandler = inputHandler_;
+	public ConnectionHandler(InputHandler inputHandler, StartUI ui, Server server){
+		this.inputHandler = inputHandler;
 		uiThread = ui;
 		connectionList = new ArrayList<Connection>();
-		server = server_;
+		this.server = server;
 		this.setName("ConnectionHandler");
 	}
 	

@@ -15,7 +15,7 @@ public class KeyBoard implements KeyToHandle {
     	this.robot = new Robot();
     }
 
-    public void typeDown(char character) {
+    public boolean typeDown(char character) {
     	switch (character) {
     	case 'a': robot.keyPress(KeyEvent.VK_A); break;
     	case 'b': robot.keyPress(KeyEvent.VK_B); break;
@@ -58,9 +58,11 @@ public class KeyBoard implements KeyToHandle {
     	case 17: robot.keyPress(KeyEvent.VK_CONTROL); break;
     	//TODO: arrow keys
     	default:
-    		System.out.println("character is: " + character);
-    		throw new IllegalArgumentException("Cannot type character " + character);
+    		System.out.println("Illegeal character." + character);
+    		return false;
+    		//throw new IllegalArgumentException("Cannot type character " + character);
     	}
+    	return true;
     }
     
     public void typeUp(char character) {
@@ -110,25 +112,31 @@ public class KeyBoard implements KeyToHandle {
     	}
     }
     
-    public void setKeyToHandle(int key_){
+    public boolean setKeyToHandle(int key_){
     	Byte key = (byte)(key_);
     	char command = (char)key.byteValue();
-    	typeDown(command);
+    	if (!typeDown(command)) {
+    		return false;
+    	}
     	typeUp(command);
+    	return true;
     }
     
-    public void setKeyToHandle(int[] list){
+    public boolean setKeyToHandle(int[] list){
     	Byte key;
     	char command;
 		for(int i = 0; i < list.length; i++){
 			key = (byte)(list[i]);
 			command = (char)key.byteValue();
-			typeDown(command);
+			if (!typeDown(command)) {
+				return false;
+			}
 		}
 		for(int i = list.length - 1; i >= 0; i--){
 			key = (byte)(list[i]);
 			command = (char)key.byteValue();
 			typeUp(command);
 		}
+		return true;
     }
 }
