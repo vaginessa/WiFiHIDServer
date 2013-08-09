@@ -22,52 +22,61 @@ public class Connection extends Thread{
 	private ConnectionHandler connectHandler;
 	private Server server;
 	private StartUI uiThread;
-	private String userName;
+	private String connectionName;
 	private Thread thisThread;
 	private ObjectInputStream objectInput;
 	private ObjectOutputStream objectOutput;
-	private boolean isNewUser;
+	private boolean isNewConnection;
 	
-	public Connection(Socket client, InputHandler inhan, StartUI ui, int userNumber,
+	public Connection(Socket client, InputHandler inhan, StartUI ui, int connectionNumber,
 			ConnectionHandler connect, Server server){
 		this.client = client;
 		inputHandler = inhan;
 		connectHandler = connect;
 		this.server = server;
 		uiThread = ui;
-		userName = "user " + Integer.toString(userNumber);
+		connectionName = "connection " + Integer.toString(connectionNumber);
 		thisThread = this;
-		isNewUser = true;
+		isNewConnection = true;
 		InputStream input = null;
 		try {
 			input = client.getInputStream();
-			objectInput = new ObjectInputStream(input);
+			if (input != null) {
+				objectInput = new ObjectInputStream(input);
+			}			
 		} catch (IOException e1) {
+			System.out.println("InputStream couldn't be established.");
 			e1.printStackTrace();
+			stopThread();
 		}
 		OutputStream output = null;
 		try {
 			output = client.getOutputStream();
-			objectOutput = new ObjectOutputStream(output);
+			if (output != null) {
+				objectOutput = new ObjectOutputStream(output);
+			}			
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("OutputStream couldn't be established.");
+			stopThread();
 		}
-		this.setName(userName);
+		this.setName(connectionName);
 	}
 	
 	public void run(){
-		connectHandler.addNewUser(this);
-		server.addNewUser(this);
+		connectHandler.addNewConnection(this);
+		server.addNewConnection(this);
 		while(thisThread == this){
 			getInput();
 		}		
 	}
 	
 	public void getInput(){
-	    int length = 0;
+		int length = 0;
 	    Command command = null;
 	    try {
-			command = (Command)objectInput.readObject();
+	    	if (objectInput != null) {
+	    		command = (Command)objectInput.readObject();
+	    	}
 		} catch (IOException e) {
 			System.out.println("Connection to " + remoteIp + " broke. Inputstream is closed.");
 			stopThread();
@@ -76,16 +85,20 @@ public class Connection extends Thread{
 			confirm(ConfirmationState.ILLEGAL_CLASS);
 			stopThread();
 			return;
+		} catch (ClassCastException e) {
+			confirm(ConfirmationState.ILLEGAL_CLASS);
+			stopThread();
+			return;
 		}
 	    if(length == -1){
 			stopThread();
 			return;
 		}
-	    if(isNewUser) {
-	    	uiThread.addNewUser(this);
-	    	isNewUser = false;
-	    }
 		splitIpPort(client.getRemoteSocketAddress().toString());
+	    if(isNewConnection) {
+	    	uiThread.addNewConnection(this);
+	    	isNewConnection = false;
+	    }
 		inputHandler.onIncoming(command, this);
 	}
 	
@@ -115,30 +128,39 @@ public class Connection extends Thread{
 		return remotePort;
 	}
 	
-	public String getUserName(){
-		return userName;
+	public String getConnectionName(){
+		return connectionName;
 	}
 	
 	public void stopThread(){
-		connectHandler.removeUser(this);
-		uiThread.removeUser(this);
+		connectHandler.removeConnection(this);
+		uiThread.removeConnection(this);
 		thisThread = null;
 		try {
-			if(bufferedReader != null)
+			if (bufferedReader != null) {
 				bufferedReader.close();
-			client.close();
+			}
+			if (objectInput != null) {
+				objectInput.close();
+			}
+			if (objectOutput != null) {
+				objectOutput.close();
+			}
+			if (client != null) {
+				client.close();
+			}			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
 	public interface Instruction{
-		abstract void onIncoming(Command input, Connection user_thread_);
+		abstract void onIncoming(Command input, Connection connection);
 		
 	}
 	
-	public interface UserHandling{
-		public void addNewUser(Connection new_user);
-		public void removeUser(Connection user);
+	public interface ConnectionHandling{
+		public void addNewConnection(Connection newConnection);
+		public void removeConnection(Connection conection);
 	}
 }

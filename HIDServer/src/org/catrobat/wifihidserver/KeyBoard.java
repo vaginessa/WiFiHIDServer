@@ -3,6 +3,9 @@ package org.catrobat.wifihidserver;
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.catrobat.wifihidserver.InputHandler.KeyToHandle;
 
@@ -10,6 +13,7 @@ import org.catrobat.wifihidserver.InputHandler.KeyToHandle;
 public class KeyBoard implements KeyToHandle {
 
     private Robot robot;
+    private final static ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
     
     public KeyBoard() throws AWTException {
     	this.robot = new Robot();
@@ -44,10 +48,14 @@ public class KeyBoard implements KeyToHandle {
     	case 'y': robot.keyPress(KeyEvent.VK_Y); break;
     	case 'z': robot.keyPress(KeyEvent.VK_Z); break;
     	case '0': robot.keyPress(KeyEvent.VK_0); break;
-    	case '1': robot.keyPress(KeyEvent.VK_1); break;
-    	case '2': robot.keyPress(KeyEvent.VK_2); break;
-    	case '3': robot.keyPress(KeyEvent.VK_3); break;
-    	case '4': robot.keyPress(KeyEvent.VK_4); break;
+//    	case '1': robot.keyPress(KeyEvent.VK_1); break;
+//    	case '2': robot.keyPress(KeyEvent.VK_2); break;
+//    	case '3': robot.keyPress(KeyEvent.VK_3); break;
+//    	case '4': robot.keyPress(KeyEvent.VK_4); break;
+    	case '1': robot.keyPress(KeyEvent.VK_LEFT); break;
+    	case '2': robot.keyPress(KeyEvent.VK_RIGHT); break;
+    	case '3': robot.keyPress(KeyEvent.VK_UP); break;
+    	case '4': robot.keyPress(KeyEvent.VK_DOWN); break;
     	case '5': robot.keyPress(KeyEvent.VK_5); break;
     	case '6': robot.keyPress(KeyEvent.VK_6); break;
     	case '7': robot.keyPress(KeyEvent.VK_7); break;
@@ -93,11 +101,15 @@ public class KeyBoard implements KeyToHandle {
     	case 'x': robot.keyRelease(KeyEvent.VK_X); break;
     	case 'y': robot.keyRelease(KeyEvent.VK_Y); break;
     	case 'z': robot.keyRelease(KeyEvent.VK_Z); break;
-    	case '0': robot.keyRelease(KeyEvent.VK_0); break;
-    	case '1': robot.keyRelease(KeyEvent.VK_1); break;
-    	case '2': robot.keyRelease(KeyEvent.VK_2); break;
-    	case '3': robot.keyRelease(KeyEvent.VK_3); break;
-    	case '4': robot.keyRelease(KeyEvent.VK_4); break;
+//    	case '0': robot.keyRelease(KeyEvent.VK_0); break;
+//    	case '1': robot.keyRelease(KeyEvent.VK_1); break;
+//    	case '2': robot.keyRelease(KeyEvent.VK_2); break;
+//    	case '3': robot.keyRelease(KeyEvent.VK_3); break;
+//    	case '4': robot.keyRelease(KeyEvent.VK_4); break;
+    	case '1': robot.keyRelease(KeyEvent.VK_LEFT); break;
+    	case '2': robot.keyRelease(KeyEvent.VK_RIGHT); break;
+    	case '3': robot.keyRelease(KeyEvent.VK_UP); break;
+    	case '4': robot.keyRelease(KeyEvent.VK_DOWN); break;
     	case '5': robot.keyRelease(KeyEvent.VK_5); break;
     	case '6': robot.keyRelease(KeyEvent.VK_6); break;
     	case '7': robot.keyRelease(KeyEvent.VK_7); break;
@@ -114,11 +126,18 @@ public class KeyBoard implements KeyToHandle {
     
     public boolean setKeyToHandle(int key_){
     	Byte key = (byte)(key_);
-    	char command = (char)key.byteValue();
+    	final char command = (char)key.byteValue();
     	if (!typeDown(command)) {
     		return false;
     	}
-    	typeUp(command);
+    	Runnable task = new Runnable() {
+			
+			@Override
+			public void run() {
+				typeUp(command);				
+			}
+		};
+		worker.schedule(task, 225, TimeUnit.MILLISECONDS);
     	return true;
     }
     

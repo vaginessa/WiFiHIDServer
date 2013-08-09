@@ -12,7 +12,7 @@ import javax.swing.JTextPane;
 import javax.swing.UIManager;
 import javax.swing.border.EtchedBorder;
 
-import org.catrobat.wifihidserver.Connection.UserHandling;
+import org.catrobat.wifihidserver.Connection.ConnectionHandling;
 import org.catrobat.wifihidserver.ConnectionListener.errorOnSystem;
 
 import java.awt.event.ItemEvent;
@@ -26,7 +26,7 @@ import java.util.Iterator;
 
 import javax.swing.JComboBox;
 
-public class StartUI implements UserHandling, errorOnSystem {
+public class StartUI implements ConnectionHandling, errorOnSystem {
 	private JFrame frame;
 	private Server server;
 	private boolean serverStarted;
@@ -122,9 +122,9 @@ public class StartUI implements UserHandling, errorOnSystem {
 
 			@Override
 			public void itemStateChanged(ItemEvent arg0) {
-				Connection connection = findUserByName((String) comboBoxConnections
+				Connection connection = findConnectionByName((String) comboBoxConnections
 						.getSelectedItem());
-				refreshUserList(connection);
+				refreshConnectionList(connection);
 			}
 		});
 		frame.getContentPane().add(comboBoxConnections);
@@ -172,40 +172,40 @@ public class StartUI implements UserHandling, errorOnSystem {
 		frame.getContentPane().add(comboBoxConnections);
 	}
 
-	public void addNewUser(Connection user) {
-		connectionList.add(user);
-		if (user != null) {
-			comboBoxConnections.addItem((String) user.getUserName());
+	public void addNewConnection(Connection connection) {
+		connectionList.add(connection);
+		if (connection != null) {
+			comboBoxConnections.addItem((String) connection.getConnectionName());
 			frame.getContentPane().add(comboBoxConnections);
 		}
 	}
 
-	public void removeUser(Connection user) {
-		connectionList.remove(user);
-		if (user != null) {
-			comboBoxConnections.removeItem((String) user.getUserName());
+	public void removeConnection(Connection connection) {
+		if (connection != null) {
+			connectionList.remove(connection);
+			comboBoxConnections.removeItem((String) connection.getConnectionName());
 			frame.getContentPane().add(comboBoxConnections);
 		}
 	}
 
-	public void refreshUserList(Connection user) {
-		if (user != null) {
-			textPaneIp.setText(user.getIp());
-			textPanePort.setText(user.getPort());
+	public void refreshConnectionList(Connection connection) {
+		if (connection != null) {
+			textPaneIp.setText(connection.getIp());
+			textPanePort.setText(connection.getPort());
 		} else {
 			textPaneIp.setText("");
 			textPanePort.setText("");
 		}
 	}
 
-	public Connection findUserByName(String name) {
-		Connection user = null;
+	public Connection findConnectionByName(String name) {
+		Connection connection = null;
 		if (connectionList != null) {
 			Iterator<Connection> it = connectionList.iterator();
 			while (it.hasNext()) {
-				user = it.next();
-				if (user.getUserName().equals(name))
-					return user;
+				connection = it.next();
+				if (connection.getConnectionName().equals(name))
+					return connection;
 			}
 		}
 		return null;

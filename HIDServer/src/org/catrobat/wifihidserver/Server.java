@@ -4,9 +4,9 @@ import java.awt.AWTException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.catrobat.wifihidserver.Connection.UserHandling;
+import org.catrobat.wifihidserver.Connection.ConnectionHandling;
 
-public class Server implements UserHandling {
+public class Server implements ConnectionHandling {
 	private static Server instance = null;
 	private ConnectionListener connectionListener;
 	private InputHandler inputHandler;
@@ -66,7 +66,7 @@ public class Server implements UserHandling {
 		connectionListener.stopThread();
 		connectionHandler.stopThread();
 		inputHandler.stopThread();
-		killUserThreads();
+		killConnectionThreads();
 		try {
 			connectionListener.join();
 			connectionHandler.join();
@@ -78,7 +78,7 @@ public class Server implements UserHandling {
 		System.out.println("Server finished.");
 	}
 
-	public void killUserThreads() {
+	public void killConnectionThreads() {
 		if (connectionList.size() != 0) {
 			Iterator<Connection> it = connectionList.iterator();
 			Connection connection = null;
@@ -94,11 +94,11 @@ public class Server implements UserHandling {
 		}
 	}
 
-	public void addNewUser(Connection connection) {
+	public void addNewConnection(Connection connection) {
 		connectionList.add(connection);
 	}
 
-	public void removeUser(Connection connection) {
+	public void removeConnection(Connection connection) {
 		connectionList.remove(connection);
 	}
 }

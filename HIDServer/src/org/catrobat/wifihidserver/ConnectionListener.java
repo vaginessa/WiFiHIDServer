@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 
 public class ConnectionListener extends Thread {
 	private Thread thisThread;
-	private DatagramPacket dataPacket;
+	protected DatagramPacket dataPacket;
 	public Object succesLock;
 	private final int port = 64000;	
 	private static DatagramSocket dataSocket;
@@ -38,7 +38,7 @@ public class ConnectionListener extends Thread {
 			dataPacket = new DatagramPacket(message, message.length);
 			dataSocket = null;
 			try {
-				dataSocket = new DatagramSocket(port);
+				dataSocket = createNewSocket();
 				dataSocket.setSoTimeout(1000);
 				startedSuccessfully = true;
 			} catch (SocketException e) {
@@ -46,6 +46,10 @@ public class ConnectionListener extends Thread {
 			}
 			succesLock.notifyAll();
 		}
+	}
+	
+	public DatagramSocket createNewSocket() throws SocketException {
+		return new DatagramSocket(port);
 	}
 	
 	public void listen() {

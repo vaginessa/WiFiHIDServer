@@ -1,12 +1,13 @@
 package org.catrobat.wifihidserver;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.catrobat.wifihidserver.Connection.UserHandling;
+import org.catrobat.wifihidserver.Connection.ConnectionHandling;
 
 
-public class ConnectionHandler extends Thread implements UserHandling{
+public class ConnectionHandler extends Thread implements ConnectionHandling{
 	private Thread thisThread;
 	private InputHandler inputHandler;
 	private StartUI uiThread;
@@ -23,18 +24,23 @@ public class ConnectionHandler extends Thread implements UserHandling{
 		this.setName("ConnectionHandler");
 	}
 	
-	public void run(){
+	public void run() {
 		initialize();
 		int connectionCount = 0;
-	    java.net.Socket client;
+	    Socket client;
 	    while (thisThread == this) {
 	    	try {
 	    		if (serverSocket != null) {
 	    			client = serverSocket.accept();
 	    			connectionCount++;
-		    		Connection newUser = new Connection(client, inputHandler, uiThread, connectionCount, this, server);
-		    		if (newUser != null) {
-		    			newUser.start();		    			
+	    			Connection newConnection;
+	    			if(client != null) {
+	    				newConnection = createNewConnection(client, connectionCount);	    				
+	    			} else {
+	    				continue;
+	    			}
+		    		if (newConnection != null) {
+		    			newConnection.start();		    			
 		    		}	    			
 	    		} else {
 	    			continue;
@@ -48,14 +54,21 @@ public class ConnectionHandler extends Thread implements UserHandling{
 	public void initialize() {
 		thisThread = this;
 		serverSocket = null;
-	    serverSocket = null;
 	    try {
-			serverSocket = new java.net.ServerSocket(port);
+			serverSocket = createNewServerSocket();
     		assert this.serverSocket.isBound();
 			serverSocket.setSoTimeout(1000);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}		    
+	}
+	
+	public java.net.ServerSocket createNewServerSocket() throws IOException {
+		return new java.net.ServerSocket(port);
+	}
+	
+	public Connection createNewConnection(Socket client, int connectionCount) {
+		return new Connection(client, inputHandler, uiThread, connectionCount, this, server);
 	}
 	
 	public void stopThread(){
@@ -69,19 +82,19 @@ public class ConnectionHandler extends Thread implements UserHandling{
 		thisThread = null;
 	}
 	
-	public void addNewUser(Connection newUser){
+	public void addNewConnection(Connection newConnection){
 		Iterator<Connection> it = connectionList.iterator();
 		Connection connection = null;
         while (it.hasNext()) {
         	connection = it.next();
-            if (connection.getIp().equals(newUser.getIp())) {
+            if (connection.getIp().equals(newConnection.getIp())) {
             	return;            	
             }
         }
-        connectionList.add(newUser);
+        connectionList.add(newConnection);
 	}
 	
-	public void removeUser(Connection connection){
+	public void removeConnection(Connection connection){
 		connectionList.remove(connection);
 	}
 }
