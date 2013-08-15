@@ -60,6 +60,11 @@ public class Connection extends Thread{
 			stopThread();
 		}
 		this.setName(connectionName);
+		splitIpPort(client.getRemoteSocketAddress().toString());
+	    if(isNewConnection) {
+	    	uiThread.addNewConnection(this);
+	    	isNewConnection = false;
+	    }
 	}
 	
 	public void run(){
@@ -94,11 +99,6 @@ public class Connection extends Thread{
 			stopThread();
 			return;
 		}
-		splitIpPort(client.getRemoteSocketAddress().toString());
-	    if(isNewConnection) {
-	    	uiThread.addNewConnection(this);
-	    	isNewConnection = false;
-	    }
 		inputHandler.onIncoming(command, this);
 	}
 	

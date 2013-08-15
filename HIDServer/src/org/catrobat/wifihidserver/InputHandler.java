@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import org.catrobat.catroid.io.Command;
+	  import org.catrobat.catroid.io.Command;
 import org.catrobat.catroid.io.Confirmation.ConfirmationState;
 import org.catrobat.wifihidserver.Connection.Instruction;
 
@@ -67,14 +67,14 @@ public class InputHandler extends Thread implements Instruction{
 	public void onIncoming(Command input, Connection connection){
 		if(input.getCommandType() == Command.commandType.SINGLE_KEY){
 			System.out.println("Ip: " + connection.getIp() + " sends a " + input.getCommandType() + ": '" 
-					+ input.getKey() + "' (ASCII)");
+					+ getKeyName(input.getKey()) + "' (ASCII)");
 		}
 		if(input.getCommandType() ==  Command.commandType.KEY_COMBINATION){
 			System.out.print("Ip: " + connection.getIp() + " sends ");
 			int [] commands = input.getKeyComb();
 			System.out.print("'" + commands[0]);
 			for(int i = 1; i < commands.length; i++){
-				System.out.print("' + " + "'" + commands[i]);
+				System.out.print("' + " + "'" + getKeyName(commands[i]));
 			}
 			System.out.print("' (ASCII)\n");
 		}		
@@ -88,5 +88,56 @@ public class InputHandler extends Thread implements Instruction{
     public interface KeyToHandle{
     	public boolean setKeyToHandle(int key);
     	public boolean setKeyToHandle(int[] key);
+    }
+    
+    public String getKeyName(int key) {
+    	String keyName = "";
+    	switch (key) {
+			case 1:
+				keyName = "ALT";
+				break;
+			case 2:
+				keyName = "ALT GR";
+				break;
+			case 8:
+				keyName = "BACK SPACE";
+				break;
+			case 9:
+				keyName = "TAB";
+				break;
+			case 13:
+				keyName = "ENTER";
+				break;
+			case 16:
+				keyName = "SHIFT";
+				break;
+			case 17:
+				keyName = "CTRL";
+				break;
+			case 20:
+				keyName = "CAPS LOCK";
+				break;
+			case 27:
+				keyName = "ESC";
+				break;
+			case 28:
+				keyName = "UP";
+				break;
+			case 32:
+				keyName = "SPACE";
+				break;
+			case 37:
+				keyName = "LEFT";
+				break;
+			case 39:
+				keyName = "RIGHT";
+				break;
+			case 40:
+				keyName = "DOWN";
+				break;
+			default:
+				break;
+		}
+    	return keyName;
     }
 }
