@@ -7,6 +7,9 @@ import java.util.Iterator;
 import org.catrobat.wifihidserver.Connection.ConnectionHandling;
 
 public class Server implements ConnectionHandling {
+	
+	public final static int versionId = 1;
+	
 	private static Server instance = null;
 	private ConnectionListener connectionListener;
 	private InputHandler inputHandler;

@@ -14,48 +14,33 @@ import org.catrobat.wifihidserver.KeyBoard;
 import org.catrobat.wifihidserver.Server;
 import org.catrobat.wifihidserver.StartUI;
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
-
-import java.beans.DesignMode;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
-import java.util.AbstractMap;
-import java.util.HashMap;
-
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.mockito.internal.invocation.realmethod.RealMethod;
 import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Server.class})
+@PrepareForTest({Server.class, Connection.class})
 public class ConnectionTest {
 	
 	private SocketAddress socketAddress;
 	private ConnectionListener connectionListener;
 	private static final String testIp = "www.google.at";
+	private ObjectInputStream is;
 	
 	@Test
 	public void testConnectionListener() throws Exception {
@@ -100,14 +85,31 @@ public class ConnectionTest {
 		EasyMock.verify(mockSocket); 	
 	}	
 	
+	private byte[] receivedObject;
 	@Test
-	public void testConnectionHandler() throws Exception {
+	public void testConnectionHandlerWithLegalVersion() throws Exception {
 		final Server mockServer = EasyMock.createNiceMock(Server.class);
 		final InputHandler mockInputHandler = EasyMock.createNiceMock(InputHandler.class);
 		final StartUI mockUiThread = EasyMock.createNiceMock(StartUI.class);
 		final ServerSocket mockServerSocket = EasyMock.createNiceMock(ServerSocket.class);
 		final Socket mockSocket = EasyMock.createNiceMock(Socket.class);
 		final Connection mockConnection = EasyMock.createNiceMock(Connection.class);
+		
+		Object[] objectsToSend = new Object[1];
+		objectsToSend[0] = Server.versionId;
+		EasyMock.expect(mockSocket.getInputStream()).andReturn(serialize(objectsToSend));
+		receivedObject = new byte[1000];
+		EasyMock.expect(mockSocket.getOutputStream()).andReturn(new OutputStream() {
+
+			private int byteCount = 0;
+
+			@Override
+			public void write(int b) throws IOException {
+				receivedObject[byteCount] = (byte) b;
+				byteCount++;
+			}
+		});
+		EasyMock.replay(mockSocket, mockServer);
 		ConnectionHandler connectionHandler = new ConnectionHandler(mockInputHandler, mockUiThread, mockServer) {
 
 			@Override
@@ -127,56 +129,43 @@ public class ConnectionTest {
 				return mockSocket;
 			}
 		}));
+		
 		mockConnection.start();
 		EasyMock.expectLastCall();
-		EasyMock.replay(mockServer, mockInputHandler, mockUiThread, mockServerSocket, mockSocket, mockConnection);
+		EasyMock.replay(mockInputHandler, mockUiThread, mockServerSocket, mockConnection);
 		connectionHandler.start();
 		Thread.sleep(1000L);
-		EasyMock.verify(mockServer, mockInputHandler, mockUiThread, mockServerSocket, mockSocket, mockConnection);
+
+		ByteArrayInputStream in = new ByteArrayInputStream(receivedObject);
+		if (is == null) {
+			is = new ObjectInputStream(in);
+		}
+		
+		Object startRegistration = deserialize(is);
+		Object confirmation = deserialize(is);
+		
+		assertTrue("Invalid incoming object to start syncronisation.", startRegistration instanceof Integer);
+		assertTrue("Invalid incoming param to start syncronisation.", (Integer) startRegistration == 1);
+		assertTrue("Invalid input, not of type Confirmation.", confirmation instanceof Confirmation);
+		assertTrue("Invalid ConfirmationState. Not of type LEGAL_VERSION_ID", ((Confirmation) confirmation).
+				getConfirmationState().equals(ConfirmationState.LEGAL_VERSION_ID) );
+		EasyMock.verify(mockServer, mockInputHandler, mockServerSocket, mockSocket, mockConnection);
+		receivedObject = null;
 	}
 
 	@Test
-	public void testConnectionLegal() throws Exception {
+	public void testConnectionHandlerWithIllegalVersion() throws Exception {
 		final Server mockServer = EasyMock.createNiceMock(Server.class);
 		final InputHandler mockInputHandler = EasyMock.createNiceMock(InputHandler.class);
 		final StartUI mockUiThread = EasyMock.createNiceMock(StartUI.class);
+		final ServerSocket mockServerSocket = EasyMock.createNiceMock(ServerSocket.class);
 		final Socket mockSocket = EasyMock.createNiceMock(Socket.class);
-		final ConnectionHandler mockConnectionHandler = EasyMock.createNiceMock(ConnectionHandler.class);
-		final Command command = new Command('a', commandType.SINGLE_KEY);
-
-		EasyMock.expect(mockSocket.getInputStream()).andReturn(serialize(command));
-		final SocketAddress socketAddress = new InetSocketAddress(testIp, 64000);
-		EasyMock.expect(mockSocket.getRemoteSocketAddress()).andReturn(socketAddress).anyTimes();
-		mockInputHandler.onIncoming(EasyMock.isA(Command.class), EasyMock.isA(Connection.class));
-		EasyMock.expectLastCall().andDelegateTo(new InputHandler(new KeyBoard() {
-		}) {
-			@Override
-			public void onIncoming(Command command_, Connection connection) {
-				assertTrue("Connection: Illegal input (not of type command).", command_ instanceof Command);
-			}
-		});
-		EasyMock.replay(mockSocket, mockServer, mockInputHandler, mockUiThread, mockConnectionHandler);
-		Connection connection = new Connection(mockSocket, mockInputHandler, mockUiThread, 3, mockConnectionHandler,
-				mockServer) {
-		};
-		connection.start();
-		Thread.sleep(1000L);
-		connection.stopThread();
-		EasyMock.verify(mockSocket, mockServer, mockInputHandler, mockUiThread, mockConnectionHandler);
-	}
-	
-	private byte[] receivedObject;
-	@Test
-	public void testConnectionIllegal() throws Exception {
-		final Server mockServer = EasyMock.createNiceMock(Server.class);
-		final InputHandler mockInputHandler = EasyMock.createNiceMock(InputHandler.class);
-		final StartUI mockUiThread = EasyMock.createNiceMock(StartUI.class);
-		final Socket mockSocket = EasyMock.createNiceMock(Socket.class);
-		final ConnectionHandler mockConnectionHandler = EasyMock.createNiceMock(ConnectionHandler.class);
-		final Confirmation confirmation = new Confirmation(ConfirmationState.COMMAND_SEND_SUCCESSFULL);
-
+		final Connection mockConnection = EasyMock.createNiceMock(Connection.class);
+		
+		Object[] objectsToSend = new Object[1];
+		objectsToSend[0] = Server.versionId + 1;
+		EasyMock.expect(mockSocket.getInputStream()).andReturn(serialize(objectsToSend));
 		receivedObject = new byte[1000];
-		EasyMock.expect(mockSocket.getInputStream()).andReturn(serialize(confirmation));
 		EasyMock.expect(mockSocket.getOutputStream()).andReturn(new OutputStream() {
 
 			private int byteCount = 0;
@@ -187,40 +176,165 @@ public class ConnectionTest {
 				byteCount++;
 			}
 		});
+		EasyMock.replay(mockSocket, mockServer);
+		ConnectionHandler connectionHandler = new ConnectionHandler(mockInputHandler, mockUiThread, mockServer) {
 
-		final SocketAddress socketAddress = new InetSocketAddress(testIp, 64000);
-		EasyMock.expect(mockSocket.getRemoteSocketAddress()).andReturn(socketAddress).anyTimes();
-		mockSocket.close();
-		EasyMock.expectLastCall();
-		EasyMock.replay(mockSocket, mockServer, mockInputHandler, mockUiThread, mockConnectionHandler);
-		Connection connection = new Connection(mockSocket, mockInputHandler, mockUiThread, 3, mockConnectionHandler,
-				mockServer) {
+			@Override
+			public ServerSocket createNewServerSocket() {
+				return mockServerSocket;
+			}
+
+			@Override
+			public Connection createNewConnection(Socket client, int connectionCount) {
+				assertTrue("ConnectionHandler: invalid Socket.", client.equals(mockSocket));
+				return mockConnection;
+			}
 		};
-		connection.start();
+		EasyMock.expect(mockServerSocket.accept()).andDelegateTo((new ServerSocket() {
+			@Override
+			public Socket accept() {
+				return mockSocket;
+			}
+		}));
+
+		mockUiThread.errorDialogWithLink(EasyMock.isA(String[].class));
+		EasyMock.expectLastCall();
+		EasyMock.replay(mockInputHandler, mockUiThread, mockServerSocket, mockConnection);
+		connectionHandler.start();
 		Thread.sleep(1000L);
-		assertTrue("ConnectionIllegal: Response not of type Confirmation",
-				deserialize(receivedObject) instanceof Confirmation);
-		assertTrue(
-				"sadjkfsadlj",
-				((Confirmation) deserialize(receivedObject)).getConfirmationState().equals(
-						ConfirmationState.ILLEGAL_CLASS));
-		connection.stopThread();
-		EasyMock.verify(mockSocket, mockServer, mockInputHandler, mockUiThread, mockConnectionHandler);
+		
+		ByteArrayInputStream in = new ByteArrayInputStream(receivedObject);
+		if (is == null) {
+			is = new ObjectInputStream(in);
+		}
+		Object startRegistration = deserialize(is);
+		Object confirmation = deserialize(is);
+		
+		assertTrue("Invalid incoming object to start syncronisation.", startRegistration instanceof Integer);
+		assertTrue("Invalid incoming param to start syncronisation.", (Integer) startRegistration == 1);
+		assertTrue("Invalid input, not of type Confirmation.", confirmation instanceof Confirmation);
+		assertTrue("Invalid ConfirmationState. Not of type ILLEGAL_VERSION_ID", ((Confirmation) confirmation).
+				getConfirmationState().equals(ConfirmationState.ILLEGAL_VERSION_ID) );
+		EasyMock.verify(mockServer, mockUiThread, mockInputHandler, mockServerSocket, mockSocket, mockConnection);
+		receivedObject = null;
 	}
 	
-	private InputStream serialize(Object object) throws IOException {
+	@Test
+	public void testConnectionLegal() throws Exception {
+		final Server mockServer = EasyMock.createNiceMock(Server.class);
+		final InputHandler mockInputHandler = EasyMock.createNiceMock(InputHandler.class);
+		final StartUI mockUiThread = EasyMock.createNiceMock(StartUI.class);
+		final Socket mockSocket = EasyMock.createNiceMock(Socket.class);
+		final ConnectionHandler mockConnectionHandler = EasyMock.createNiceMock(ConnectionHandler.class);
+		final ObjectInputStream mockObjectInputStream = PowerMock.createMock(ObjectInputStream.class);
+		final ObjectOutputStream mockObjectOutputStream = EasyMock.createNiceMock(ObjectOutputStream.class);
+		final Command command = new Command('a', commandType.SINGLE_KEY);
+		final SocketAddress socketAddress = new InetSocketAddress(testIp, 64000);
+		
+		EasyMock.expect(mockSocket.getRemoteSocketAddress()).andReturn(socketAddress).anyTimes();
+		EasyMock.replay(mockSocket);
+		mockInputHandler.onIncoming(EasyMock.isA(Command.class), EasyMock.isA(Connection.class));
+		EasyMock.expectLastCall().andDelegateTo(new InputHandler(new KeyBoard() {
+		}) {
+			@Override
+			public void onIncoming(Command command_, Connection connection) {
+				assertTrue("Connection: Illegal input (not of type command).", command_ instanceof Command);
+			}
+		});		
+		EasyMock.replay(mockUiThread);
+		Connection connection = new Connection(mockSocket, mockInputHandler, mockUiThread, 3, mockConnectionHandler,
+				mockServer, mockObjectInputStream, mockObjectOutputStream) {
+
+			@Override
+			public void writeToClient(Confirmation confirmation) throws IOException {
+				assertTrue("Confirmation state was not of Type COMMAND_SEND_SUCCESSFULL.", confirmation.getConfirmationState().
+						equals(ConfirmationState.COMMAND_SEND_SUCCESSFULL));
+			}
+		};
+		EasyMock.expect(mockObjectInputStream.readObject()).andReturn(command).anyTimes();
+		
+		mockObjectInputStream.close();
+		EasyMock.expectLastCall();
+		mockObjectOutputStream.close();
+		EasyMock.expectLastCall();
+		mockSocket.close();
+		EasyMock.expectLastCall();
+		EasyMock.replay(mockServer, mockInputHandler, mockConnectionHandler);
+		PowerMock.replay(mockObjectInputStream);
+		
+		connection.start();
+		Thread.sleep(1000L);
+		connection.stopThread();
+		PowerMock.verify(mockObjectInputStream);
+		EasyMock.verify(mockSocket, mockServer, mockInputHandler, mockConnectionHandler, mockObjectInputStream);
+	}
+	
+	@Test
+	public void testConnectionIlegal() throws Exception {
+		final Server mockServer = EasyMock.createNiceMock(Server.class);
+		final InputHandler mockInputHandler = EasyMock.createNiceMock(InputHandler.class);
+		final StartUI mockUiThread = EasyMock.createNiceMock(StartUI.class);
+		final Socket mockSocket = EasyMock.createNiceMock(Socket.class);
+		final ConnectionHandler mockConnectionHandler = EasyMock.createNiceMock(ConnectionHandler.class);
+		final ObjectInputStream mockObjectInputStream = PowerMock.createMock(ObjectInputStream.class);
+		final ObjectOutputStream mockObjectOutputStream = EasyMock.createNiceMock(ObjectOutputStream.class);
+		// command of wrong class type
+		final Confirmation command = new Confirmation(ConfirmationState.ILLEGAL_VERSION_ID);
+		final SocketAddress socketAddress = new InetSocketAddress(testIp, 64000);
+		
+		EasyMock.expect(mockSocket.getRemoteSocketAddress()).andReturn(socketAddress).anyTimes();
+		EasyMock.replay(mockSocket);
+		mockInputHandler.onIncoming(EasyMock.isA(Command.class), EasyMock.isA(Connection.class));
+		EasyMock.replay(mockUiThread);
+		Connection connection = new Connection(mockSocket, mockInputHandler, mockUiThread, 3, mockConnectionHandler,
+				mockServer, mockObjectInputStream, mockObjectOutputStream) {
+
+			@Override
+			public void writeToClient(Confirmation confirmation) throws IOException {
+				assertTrue("Confirmation state was not of Type ILLEGAL_CLASS.", confirmation.getConfirmationState().
+						equals(ConfirmationState.ILLEGAL_CLASS));
+			}
+		};
+		EasyMock.expect(mockObjectInputStream.readObject()).andReturn(command).anyTimes();
+		
+		mockObjectInputStream.close();
+		EasyMock.expectLastCall();
+		mockObjectOutputStream.close();
+		EasyMock.expectLastCall();
+		mockSocket.close();
+		EasyMock.expectLastCall();
+		EasyMock.replay(mockServer, mockConnectionHandler);
+		PowerMock.replay(mockObjectInputStream);
+		
+		connection.start();
+		Thread.sleep(1000L);
+		PowerMock.verify(mockObjectInputStream);
+		EasyMock.verify(mockSocket, mockServer, mockConnectionHandler, mockObjectInputStream);
+	}
+	
+	private InputStream serialize(Object[] object) throws IOException {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-	    ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-	    objectOutputStream.writeObject(object);
+		int size = object.length;
+			ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+		for(int i = 0; i < size; i++) {
+			objectOutputStream.writeObject(object[i]);
+		}	    
 	    objectOutputStream.flush();
 	    objectOutputStream.close();
 	    InputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
 	    return inputStream;
 	}
 	
-	private Object deserialize(byte[] data) throws IOException, ClassNotFoundException {
-	    ByteArrayInputStream in = new ByteArrayInputStream(data);
-	    ObjectInputStream is = new ObjectInputStream(in);
+	private Object deserialize(Object data) throws IOException, ClassNotFoundException {
+	    
+		if (data instanceof byte[]) {
+	    	ByteArrayInputStream in = new ByteArrayInputStream((byte[]) data);
+	    	if (is == null) {
+				is = new ObjectInputStream(in);
+			}
+	    } else {
+	    	is = (ObjectInputStream) data;
+	    }
 	    return is.readObject();
 	}
 	
@@ -279,10 +393,11 @@ public class ConnectionTest {
 
 		InputHandler inputHandler = new InputHandler(mockKeyboard);
 		inputHandler.start();
+		Thread.sleep(500L);
 		inputHandler.onIncoming(mockCommandSingleKey, mockConnection);
 		inputHandler.onIncoming(mockCommandKeyCombination, mockConnection);
 
-		Thread.sleep(1000L);
+		Thread.sleep(2000L);
 		EasyMock.verify(mockCommandSingleKey, mockCommandKeyCombination, mockKeyboard, mockConnection);
 	}
 	

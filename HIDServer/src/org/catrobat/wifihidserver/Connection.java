@@ -2,10 +2,8 @@ package org.catrobat.wifihidserver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.net.Socket;
 
 import org.catrobat.catroid.io.Command;
@@ -26,45 +24,22 @@ public class Connection extends Thread{
 	private Thread thisThread;
 	private ObjectInputStream objectInput;
 	private ObjectOutputStream objectOutput;
-	private boolean isNewConnection;
 	
 	public Connection(Socket client, InputHandler inhan, StartUI ui, int connectionNumber,
-			ConnectionHandler connect, Server server){
+			ConnectionHandler connect, Server server, ObjectInputStream objectInput,
+				ObjectOutputStream objectOutput) {
 		this.client = client;
 		inputHandler = inhan;
 		connectHandler = connect;
 		this.server = server;
+		this.objectInput = objectInput;
+		this.objectOutput = objectOutput;
 		uiThread = ui;
 		connectionName = "connection " + Integer.toString(connectionNumber);
 		thisThread = this;
-		isNewConnection = true;
-		InputStream input = null;
-		try {
-			input = client.getInputStream();
-			if (input != null) {
-				objectInput = new ObjectInputStream(input);
-			}			
-		} catch (IOException e1) {
-			System.out.println("InputStream couldn't be established.");
-			e1.printStackTrace();
-			stopThread();
-		}
-		OutputStream output = null;
-		try {
-			output = client.getOutputStream();
-			if (output != null) {
-				objectOutput = new ObjectOutputStream(output);
-			}			
-		} catch (IOException e) {
-			System.out.println("OutputStream couldn't be established.");
-			stopThread();
-		}
 		this.setName(connectionName);
 		splitIpPort(client.getRemoteSocketAddress().toString());
-	    if(isNewConnection) {
-	    	uiThread.addNewConnection(this);
-	    	isNewConnection = false;
-	    }
+		uiThread.addNewConnection(this);
 	}
 	
 	public void run(){
@@ -105,11 +80,15 @@ public class Connection extends Thread{
 	public void confirm(ConfirmationState state) {
 		Confirmation confirmation = new Confirmation(state);
 		try {
-			objectOutput.writeObject(confirmation);
+			writeToClient(confirmation);
 		} catch (IOException e1) {
 			System.out.println("Connection to " + remoteIp + " broke.");
 			stopThread();
 		}	
+	}
+	
+	public void writeToClient(Confirmation confirmation) throws IOException {
+		objectOutput.writeObject(confirmation);
 	}
 	
 	public void splitIpPort(String ipWithPort){

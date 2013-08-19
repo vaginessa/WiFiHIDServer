@@ -1,5 +1,6 @@
 package org.catrobat.wifihidserver;
 
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Toolkit;
@@ -7,10 +8,14 @@ import java.awt.Toolkit;
 import javax.swing.JFrame;
 import java.awt.Font;
 import javax.swing.JButton;
+import javax.swing.JEditorPane;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
 import javax.swing.border.EtchedBorder;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 
 import org.catrobat.wifihidserver.Connection.ConnectionHandling;
 import org.catrobat.wifihidserver.ConnectionListener.errorOnSystem;
@@ -36,6 +41,7 @@ public class StartUI implements ConnectionHandling, errorOnSystem {
 	private JTextPane textPaneIp;
 	private ArrayList<Connection> connectionList;
 	private JComboBox comboBoxConnections;
+	private  final String downloadLink = "https://pocketcode.org";
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -142,6 +148,34 @@ public class StartUI implements ConnectionHandling, errorOnSystem {
 
 	public void errorDialog(String message) {
 		JOptionPane.showMessageDialog(frame, message);
+	}
+	
+	public void errorDialogWithLink(String[] message) {
+		JEditorPane ep = new JEditorPane("text/html", "<html><body style=\"" + "Google" + "\">" 
+	            + message[0] + "<a href>" + "\n" + message[1] + "</a>" 
+	            + message[2] + "</body></html>");
+		
+		ep.addHyperlinkListener(new HyperlinkListener() {
+			
+	        public void hyperlinkUpdate(HyperlinkEvent e) {
+	            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+		            	Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+			        	if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+			                try {
+			                	java.net.URI uri = new java.net.URI(downloadLink);
+			                	Desktop.getDesktop().browse(uri);
+			                } catch (Exception e1) {
+			                    e1.printStackTrace();
+			                }
+			            }
+		            }
+	            }
+        });
+	    ep.setEditable(false);
+	    JLabel label = new JLabel();
+	    ep.setBackground(label.getBackground());
+	    JOptionPane.showMessageDialog(null, ep);
+	    
 	}
 
 	public void startServer() {
