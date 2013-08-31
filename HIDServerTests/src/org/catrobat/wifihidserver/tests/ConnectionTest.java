@@ -229,13 +229,13 @@ public class ConnectionTest {
 		final ObjectInputStream mockObjectInputStream = PowerMock.createMock(ObjectInputStream.class);
 		final ObjectOutputStream mockObjectOutputStream = EasyMock.createNiceMock(ObjectOutputStream.class);
 		final Command command = new Command('a', commandType.SINGLE_KEY);
+		final KeyBoard mockKeyboard = EasyMock.createNiceMock(KeyBoard.class);
 		final SocketAddress socketAddress = new InetSocketAddress(testIp, 64000);
 		
 		EasyMock.expect(mockSocket.getRemoteSocketAddress()).andReturn(socketAddress).anyTimes();
 		EasyMock.replay(mockSocket);
 		mockInputHandler.onIncoming(EasyMock.isA(Command.class), EasyMock.isA(Connection.class));
-		EasyMock.expectLastCall().andDelegateTo(new InputHandler(new KeyBoard() {
-		}) {
+		EasyMock.expectLastCall().andDelegateTo(new InputHandler(mockKeyboard) {
 			@Override
 			public void onIncoming(Command command_, Connection connection) {
 				assertTrue("Connection: Illegal input (not of type command).", command_ instanceof Command);
@@ -338,7 +338,7 @@ public class ConnectionTest {
 	    return is.readObject();
 	}
 	
-	private final int key = 3;
+	private final int key = 28;
 	private int[] keyCombination = new int[2];
 	@Test
 	public void testInputHandlerLegalArguments() throws Exception {
@@ -351,8 +351,8 @@ public class ConnectionTest {
 		EasyMock.expect(mockConnection.getIp()).andReturn(testIp).anyTimes();
 		EasyMock.expect(mockCommandKeyCombination.getCommandType()).andReturn(commandType.KEY_COMBINATION).times(3);
 
-		keyCombination[0] = 123456;
-		keyCombination[1] = 234567;
+		keyCombination[0] = 13;
+		keyCombination[1] = 20;
 		EasyMock.expect(mockCommandSingleKey.getKey()).andReturn(key).anyTimes();
 		EasyMock.expect(mockCommandKeyCombination.getKeyComb()).andReturn(keyCombination).anyTimes();
 		EasyMock.expect(mockKeyboard.setKeyToHandle(EasyMock.anyInt())).andReturn(false);
@@ -381,8 +381,8 @@ public class ConnectionTest {
 		EasyMock.expect(mockConnection.getIp()).andReturn(testIp).anyTimes();
 		EasyMock.expect(mockCommandKeyCombination.getCommandType()).andReturn(commandType.KEY_COMBINATION).times(3);
 
-		keyCombination[0] = 123456;
-		keyCombination[1] = 234567;
+		keyCombination[0] = 13;
+		keyCombination[1] = 28;
 		EasyMock.expect(mockCommandSingleKey.getKey()).andReturn(key).anyTimes();
 		EasyMock.expect(mockCommandKeyCombination.getKeyComb()).andReturn(keyCombination).anyTimes();
 		EasyMock.expect(mockKeyboard.setKeyToHandle(EasyMock.anyInt())).andReturn(false);

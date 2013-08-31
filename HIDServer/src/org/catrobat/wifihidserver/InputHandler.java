@@ -66,17 +66,17 @@ public class InputHandler extends Thread implements Instruction{
 	
 	public void onIncoming(Command input, Connection connection){
 		if(input.getCommandType() == Command.commandType.SINGLE_KEY){
-			System.out.println("Ip: " + connection.getIp() + " sends a " + input.getCommandType() + ": '" 
-					+ getKeyName(input.getKey()) + "' (ASCII)");
+			System.out.println("Ip: " + connection.getIp() + " sends a " + input.getCommandType() + ": -" 
+					+ getKeyName(input.getKey()) + "-");
 		}
 		if(input.getCommandType() ==  Command.commandType.KEY_COMBINATION){
 			System.out.print("Ip: " + connection.getIp() + " sends ");
 			int [] commands = input.getKeyComb();
 			System.out.print("'" + commands[0]);
 			for(int i = 1; i < commands.length; i++){
-				System.out.print("' + " + "'" + getKeyName(commands[i]));
+				System.out.print("' + " + "-" + getKeyName(commands[i]));
 			}
-			System.out.print("' (ASCII)\n");
+			System.out.print("-\n");
 		}		
 		instructionList.put(input, connection);
 	}
