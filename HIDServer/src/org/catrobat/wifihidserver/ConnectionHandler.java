@@ -130,6 +130,8 @@ public class ConnectionHandler extends Thread implements ConnectionHandling{
 			onUiThread.start();
 			throw new Exception();
 		}
+		
+		System.out.println("client name: " + getProjectAndClientName());
 	}
 	
 	public void startSync(Socket client) throws Exception{
@@ -163,6 +165,11 @@ public class ConnectionHandler extends Thread implements ConnectionHandling{
 			System.out.println("Connection to client broke.");
 			throw e1;
 		}
+	}
+	
+	public String getProjectAndClientName() throws IOException, ClassNotFoundException {
+		String projectAndClientName = (String) objectInput.readObject();
+		return projectAndClientName;
 	}
 	
 	public void closeStreams(ObjectInputStream input, ObjectOutputStream output) {

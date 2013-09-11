@@ -39,7 +39,7 @@ public class Connection extends Thread{
 		thisThread = this;
 		this.setName(connectionName);
 		splitIpPort(client.getRemoteSocketAddress().toString());
-		uiThread.addNewConnection(this);
+		uiThread.setIpAndPort(this);
 	}
 	
 	public void run(){
@@ -113,7 +113,7 @@ public class Connection extends Thread{
 	
 	public void stopThread(){
 		connectHandler.removeConnection(this);
-		uiThread.removeConnection(this);
+		uiThread.setIpAndPort(null);
 		thisThread = null;
 		try {
 			if (bufferedReader != null) {

@@ -20,18 +20,15 @@ import javax.swing.event.HyperlinkListener;
 import org.catrobat.wifihidserver.Connection.ConnectionHandling;
 import org.catrobat.wifihidserver.ConnectionListener.errorOnSystem;
 
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.ArrayList;
-import java.util.Iterator;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import java.awt.SystemColor;
 
-import javax.swing.JComboBox;
-
-public class StartUI implements ConnectionHandling, errorOnSystem {
+public class StartUI implements errorOnSystem {
 	private JFrame frame;
 	private Server server;
 	private boolean serverStarted;
@@ -39,10 +36,12 @@ public class StartUI implements ConnectionHandling, errorOnSystem {
 	private JButton buttonStart;
 	private JTextPane textPanePort;
 	private JTextPane textPaneIp;
-	private ArrayList<Connection> connectionList;
-	private JComboBox comboBoxConnections;
 	private  final String downloadLink = "https://pocketcode.org";
+	private JTextField textClientName;
 
+	/**
+	 * @wbp.parser.entryPoint
+	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -64,7 +63,6 @@ public class StartUI implements ConnectionHandling, errorOnSystem {
 	public void initialize() {
 		serverStarted = false;
 		serverStartable = true;
-		connectionList = new ArrayList<Connection>();
 		server = null;
 		frame = new JFrame();
 		frame.addWindowListener(new WindowAdapter() {
@@ -73,7 +71,7 @@ public class StartUI implements ConnectionHandling, errorOnSystem {
 				stopServer();
 			}
 		});
-		frame.setBounds(100, 100, 450, 300);
+		frame.setBounds(100, 100, 357, 300);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		frame.setResizable(false);
@@ -85,19 +83,19 @@ public class StartUI implements ConnectionHandling, errorOnSystem {
 				startServer();
 			}
 		});
-		buttonStart.setBounds(163, 52, 117, 25);
+		buttonStart.setBounds(125, 42, 117, 25);
 		frame.getContentPane().add(buttonStart);
 
 		JTextPane txtpnPort = new JTextPane();
 		txtpnPort.setBackground(UIManager.getColor("Button.background"));
 		txtpnPort.setText("Port:");
-		txtpnPort.setBounds(221, 161, 39, 21);
+		txtpnPort.setBounds(60, 161, 39, 21);
 		frame.getContentPane().add(txtpnPort);
 
 		JTextPane txtpnIpadresse = new JTextPane();
 		txtpnIpadresse.setBackground(UIManager.getColor("Button.background"));
 		txtpnIpadresse.setText("IP-Adresse:");
-		txtpnIpadresse.setBounds(221, 194, 82, 21);
+		txtpnIpadresse.setBounds(60, 194, 82, 21);
 		frame.getContentPane().add(txtpnIpadresse);
 
 		JTextPane txtpnDesktopServer = new JTextPane();
@@ -105,35 +103,32 @@ public class StartUI implements ConnectionHandling, errorOnSystem {
 		txtpnDesktopServer.setBackground(UIManager
 				.getColor("Button.background"));
 		txtpnDesktopServer.setText("Desktop Server");
-		txtpnDesktopServer.setBounds(121, 0, 288, 30);
+		txtpnDesktopServer.setBounds(76, 0, 204, 30);
 		frame.getContentPane().add(txtpnDesktopServer);
 
 		textPaneIp = new JTextPane();
 		textPaneIp.setEditable(false);
 		textPaneIp
 				.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
-		textPaneIp.setBounds(315, 194, 117, 21);
+		textPaneIp.setBounds(163, 194, 117, 21);
 		frame.getContentPane().add(textPaneIp);
 
 		textPanePort = new JTextPane();
 		textPanePort.setEditable(false);
 		textPanePort.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null,
 				null));
-		textPanePort.setBounds(315, 161, 68, 21);
+		textPanePort.setBounds(163, 161, 68, 21);
 		frame.getContentPane().add(textPanePort);
-
-		comboBoxConnections = new JComboBox();
-		comboBoxConnections.setBounds(44, 116, 159, 24);
-		comboBoxConnections.addItemListener(new ItemListener() {
-
-			@Override
-			public void itemStateChanged(ItemEvent arg0) {
-				Connection connection = findConnectionByName((String) comboBoxConnections
-						.getSelectedItem());
-				refreshConnectionList(connection);
-			}
-		});
-		frame.getContentPane().add(comboBoxConnections);
+		
+		textClientName = new JTextField();
+		textClientName.setHorizontalAlignment(SwingConstants.CENTER);
+		textClientName.setEnabled(false);
+		textClientName.setEditable(false);
+		textClientName.setBackground(SystemColor.window);
+		textClientName.setFont(new Font("Dialog", Font.BOLD, 12));
+		textClientName.setBounds(102, 105, 160, 25);
+		frame.getContentPane().add(textClientName);
+		textClientName.setColumns(10);
 	}
 
 	public void centerFrame() {
@@ -191,38 +186,8 @@ public class StartUI implements ConnectionHandling, errorOnSystem {
 			buttonStart.setText("Stop");
 		}
 	}
-
-	public void stopServer() {
-		if (server != null) {
-			server.stopServer();
-			server = null;
-			serverStarted = false;
-			serverStartable = true;
-			buttonStart.setText("Start");
-		}
-		for (int i = 0; i < comboBoxConnections.getItemCount();) {
-			comboBoxConnections.removeItemAt(i);
-		}
-		frame.getContentPane().add(comboBoxConnections);
-	}
-
-	public void addNewConnection(Connection connection) {
-		connectionList.add(connection);
-		if (connection != null) {
-			comboBoxConnections.addItem((String) connection.getConnectionName());
-			frame.getContentPane().add(comboBoxConnections);
-		}
-	}
-
-	public void removeConnection(Connection connection) {
-		if (connection != null) {
-			connectionList.remove(connection);
-			comboBoxConnections.removeItem((String) connection.getConnectionName());
-			frame.getContentPane().add(comboBoxConnections);
-		}
-	}
-
-	public void refreshConnectionList(Connection connection) {
+	
+	public void setIpAndPort(Connection connection) {
 		if (connection != null) {
 			textPaneIp.setText(connection.getIp());
 			textPanePort.setText(connection.getPort());
@@ -232,16 +197,13 @@ public class StartUI implements ConnectionHandling, errorOnSystem {
 		}
 	}
 
-	public Connection findConnectionByName(String name) {
-		Connection connection = null;
-		if (connectionList != null) {
-			Iterator<Connection> it = connectionList.iterator();
-			while (it.hasNext()) {
-				connection = it.next();
-				if (connection.getConnectionName().equals(name))
-					return connection;
-			}
+	public void stopServer() {
+		if (server != null) {
+			server.stopServer();
+			server = null;
+			serverStarted = false;
+			serverStartable = true;
+			buttonStart.setText("Start");
 		}
-		return null;
 	}
 }

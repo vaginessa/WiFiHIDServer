@@ -4,9 +4,7 @@ import java.awt.AWTException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.catrobat.wifihidserver.Connection.ConnectionHandling;
-
-public class Server implements ConnectionHandling {
+public class Server {
 	
 	public final static int versionId = 1;
 	
