@@ -130,8 +130,7 @@ public class ConnectionHandler extends Thread implements ConnectionHandling{
 			onUiThread.start();
 			throw new Exception();
 		}
-		
-		System.out.println("client name: " + getProjectAndClientName());
+		uiThread.setClientAndProjectName(getProjectAndClientName());
 	}
 	
 	public void startSync(Socket client) throws Exception{

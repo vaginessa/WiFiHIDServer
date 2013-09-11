@@ -13,9 +13,13 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 import org.catrobat.wifihidserver.Connection.ConnectionHandling;
 import org.catrobat.wifihidserver.ConnectionListener.errorOnSystem;
@@ -27,6 +31,7 @@ import java.awt.event.WindowEvent;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import java.awt.SystemColor;
+import java.awt.Color;
 
 public class StartUI implements errorOnSystem {
 	private JFrame frame;
@@ -36,13 +41,25 @@ public class StartUI implements errorOnSystem {
 	private JButton buttonStart;
 	private JTextPane textPanePort;
 	private JTextPane textPaneIp;
+	private JTextPane textClientName;
 	private  final String downloadLink = "https://pocketcode.org";
-	private JTextField textClientName;
 
 	/**
 	 * @wbp.parser.entryPoint
 	 */
 	public static void main(String[] args) {
+		try {
+	        UIManager.setLookAndFeel(
+	            UIManager.getSystemLookAndFeelClassName());
+	    } 
+	    catch (UnsupportedLookAndFeelException e) {
+	    }
+	    catch (ClassNotFoundException e) {
+	    }
+	    catch (InstantiationException e) {
+	    }
+	    catch (IllegalAccessException e) {
+	    }
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -76,26 +93,29 @@ public class StartUI implements errorOnSystem {
 		frame.getContentPane().setLayout(null);
 		frame.setResizable(false);
 
-		buttonStart = new JButton("Start");
+		buttonStart = new JButton("");
+		buttonStart.setBackground(UIManager.getColor("Button.background"));
+		buttonStart.setFont(new Font("Dialog", Font.BOLD, 25));
 		buttonStart.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				startServer();
 			}
 		});
-		buttonStart.setBounds(125, 42, 117, 25);
+		buttonStart.setBounds(110, 67, 131, 64);
+		buttonStart.setText("START");
 		frame.getContentPane().add(buttonStart);
 
 		JTextPane txtpnPort = new JTextPane();
 		txtpnPort.setBackground(UIManager.getColor("Button.background"));
 		txtpnPort.setText("Port:");
-		txtpnPort.setBounds(60, 161, 39, 21);
+		txtpnPort.setBounds(57, 195, 39, 21);
 		frame.getContentPane().add(txtpnPort);
 
 		JTextPane txtpnIpadresse = new JTextPane();
 		txtpnIpadresse.setBackground(UIManager.getColor("Button.background"));
 		txtpnIpadresse.setText("IP-Adresse:");
-		txtpnIpadresse.setBounds(60, 194, 82, 21);
+		txtpnIpadresse.setBounds(57, 228, 82, 21);
 		frame.getContentPane().add(txtpnIpadresse);
 
 		JTextPane txtpnDesktopServer = new JTextPane();
@@ -103,32 +123,33 @@ public class StartUI implements errorOnSystem {
 		txtpnDesktopServer.setBackground(UIManager
 				.getColor("Button.background"));
 		txtpnDesktopServer.setText("Desktop Server");
-		txtpnDesktopServer.setBounds(76, 0, 204, 30);
+		txtpnDesktopServer.setBounds(76, 12, 204, 30);
 		frame.getContentPane().add(txtpnDesktopServer);
 
 		textPaneIp = new JTextPane();
 		textPaneIp.setEditable(false);
 		textPaneIp
 				.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
-		textPaneIp.setBounds(163, 194, 117, 21);
+		textPaneIp.setBounds(160, 228, 117, 21);
 		frame.getContentPane().add(textPaneIp);
 
 		textPanePort = new JTextPane();
 		textPanePort.setEditable(false);
 		textPanePort.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null,
 				null));
-		textPanePort.setBounds(163, 161, 68, 21);
+		textPanePort.setBounds(160, 195, 68, 21);
 		frame.getContentPane().add(textPanePort);
 		
-		textClientName = new JTextField();
-		textClientName.setHorizontalAlignment(SwingConstants.CENTER);
-		textClientName.setEnabled(false);
+		textClientName = new JTextPane();
 		textClientName.setEditable(false);
-		textClientName.setBackground(SystemColor.window);
-		textClientName.setFont(new Font("Dialog", Font.BOLD, 12));
-		textClientName.setBounds(102, 105, 160, 25);
+		textClientName.setFont(new Font("Dialog", Font.BOLD, 15));
+		textClientName.setBackground(UIManager.getColor("Button.background"));
+		textClientName.setBounds(37, 162, 274, 21);
+		StyledDocument doc = textClientName.getStyledDocument();
+		SimpleAttributeSet center = new SimpleAttributeSet();
+		StyleConstants.setAlignment(center, StyleConstants.ALIGN_CENTER);
+		doc.setParagraphAttributes(0, doc.getLength(), center, false);
 		frame.getContentPane().add(textClientName);
-		textClientName.setColumns(10);
 	}
 
 	public void centerFrame() {
@@ -194,7 +215,13 @@ public class StartUI implements errorOnSystem {
 		} else {
 			textPaneIp.setText("");
 			textPanePort.setText("");
+			textClientName.setText("Projekt");
 		}
+	}
+	
+	public void setClientAndProjectName(String clientAndProjectName) {
+		textClientName.setText(clientAndProjectName);
+		textClientName.setVisible(true);
 	}
 
 	public void stopServer() {

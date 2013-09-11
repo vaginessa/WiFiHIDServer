@@ -95,8 +95,9 @@ public class ConnectionTest {
 		final Socket mockSocket = EasyMock.createNiceMock(Socket.class);
 		final Connection mockConnection = EasyMock.createNiceMock(Connection.class);
 		
-		Object[] objectsToSend = new Object[1];
+		Object[] objectsToSend = new Object[2];
 		objectsToSend[0] = Server.versionId;
+		objectsToSend[1] = "Test Device - Standard Project";
 		EasyMock.expect(mockSocket.getInputStream()).andReturn(serialize(objectsToSend));
 		receivedObject = new byte[1000];
 		EasyMock.expect(mockSocket.getOutputStream()).andReturn(new OutputStream() {
