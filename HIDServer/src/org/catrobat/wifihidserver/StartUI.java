@@ -142,9 +142,10 @@ public class StartUI implements errorOnSystem {
 		
 		textClientName = new JTextPane();
 		textClientName.setEditable(false);
-		textClientName.setFont(new Font("Dialog", Font.BOLD, 15));
+		textClientName.setFont(new Font("Dialog", Font.BOLD, 17));
 		textClientName.setBackground(UIManager.getColor("Button.background"));
-		textClientName.setBounds(37, 162, 274, 21);
+		textClientName.setBounds(36, 148, 274, 35);
+		textClientName.setText("(klicke START!)");
 		StyledDocument doc = textClientName.getStyledDocument();
 		SimpleAttributeSet center = new SimpleAttributeSet();
 		StyleConstants.setAlignment(center, StyleConstants.ALIGN_CENTER);
@@ -205,6 +206,7 @@ public class StartUI implements errorOnSystem {
 			serverStarted = true;
 			serverStartable = false;
 			buttonStart.setText("Stop");
+			textClientName.setText("");
 		}
 	}
 	
@@ -215,7 +217,7 @@ public class StartUI implements errorOnSystem {
 		} else {
 			textPaneIp.setText("");
 			textPanePort.setText("");
-			textClientName.setText("Projekt");
+			textClientName.setText("(klicke START!)");
 		}
 	}
 	
@@ -232,5 +234,6 @@ public class StartUI implements errorOnSystem {
 			serverStartable = true;
 			buttonStart.setText("Start");
 		}
+		textClientName.setText("Klicke START!");
 	}
 }

@@ -12,7 +12,7 @@ import org.catrobat.wifihidserver.Connection.Instruction;
 public class InputHandler extends Thread implements Instruction{
 	
 	private Thread thisThread;
-	private HashMap<Command, Connection> instructionList;
+	private HashMap<Command, Connection> instructionList = new HashMap<Command, Connection>();
 	private KeyBoard keyboard;
 	
 	public InputHandler(KeyBoard keyboard) {
@@ -22,7 +22,6 @@ public class InputHandler extends Thread implements Instruction{
 	
 	public void run() {
 		thisThread = this;
-		instructionList = new HashMap<Command, Connection>();
 		while(thisThread == this){
 			if (instructionList.size() == 0) {
 				try {
@@ -31,6 +30,7 @@ public class InputHandler extends Thread implements Instruction{
 					e.printStackTrace();
 				}
 			} else {
+				synchronized (instructionList) {
 				Iterator<Entry<Command, Connection>> it = instructionList.entrySet().iterator();
 				Command command = it.next().getKey();
 				
@@ -39,7 +39,8 @@ public class InputHandler extends Thread implements Instruction{
 				} else {
 					instructionList.get(command).confirm(ConfirmationState.COMMAND_SEND_SUCCESSFULL);
 				}
-				instructionList.remove(command);
+					instructionList.remove(command);
+				}				
 			}
 		}
 	}
@@ -78,7 +79,10 @@ public class InputHandler extends Thread implements Instruction{
 			}
 			System.out.print("-\n");
 		}		
-		instructionList.put(input, connection);
+		synchronized (instructionList) {
+			instructionList.put(input, connection);
+		}
+		
 	}
 	
 	public void stopThread(){
