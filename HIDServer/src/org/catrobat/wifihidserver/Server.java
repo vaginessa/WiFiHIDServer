@@ -3,11 +3,12 @@ package org.catrobat.wifihidserver;
 import java.awt.AWTException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.ResourceBundle;
 
 public class Server {
-	
-	public final static int versionId = 1;
-	
+
+	public final static int versionId = 3;
+
 	private static Server instance = null;
 	private ConnectionListener connectionListener;
 	private InputHandler inputHandler;
@@ -16,8 +17,10 @@ public class Server {
 	private KeyBoard keyboard;
 	private ArrayList<Connection> connectionList;
 	private static boolean initializedSuccessfully;
+	private ResourceBundle bundle;
 
 	private Server() {
+		bundle = ResourceBundle.getBundle(StartUI.bundleBaseName);
 		initializedSuccessfully = true;
 		System.out.println("Server start.");
 		connectionList = new ArrayList<Connection>();
@@ -46,7 +49,8 @@ public class Server {
 			e1.printStackTrace();
 		}
 		if (!connectionListener.startedSuccessfully) {
-			uiThread.errorDialog("Socket ist bereits in Verwendung der Server kann nicht nochmal gestartet werden.");
+			uiThread.errorDialog(bundle
+					.getString("errorMessageSocketAlreadyInUse"));
 			initializedSuccessfully = false;
 			return;
 		}

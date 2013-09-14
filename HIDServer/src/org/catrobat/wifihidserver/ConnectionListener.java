@@ -1,4 +1,5 @@
 package org.catrobat.wifihidserver;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -10,28 +11,28 @@ public class ConnectionListener extends Thread {
 	private Thread thisThread;
 	protected DatagramPacket dataPacket;
 	public Object succesLock;
-	private final int port = 64000;	
+	private final int port = 64000;
 	private static DatagramSocket dataSocket;
 	public boolean startedSuccessfully;
-	
+
 	public ConnectionListener() {
 		this.setName("ConnectionListener");
 		succesLock = new Object();
 		startedSuccessfully = false;
 	}
-	
+
 	public void run() {
 		thisThread = currentThread();
-		while (thisThread == this) {	
+		while (thisThread == this) {
 			initialize();
 			if (startedSuccessfully) {
-				listen();				
+				listen();
 			} else {
 				break;
 			}
 		}
 	}
-	
+
 	public void initialize() {
 		synchronized (succesLock) {
 			byte[] message = new byte[1];
@@ -47,18 +48,18 @@ public class ConnectionListener extends Thread {
 			succesLock.notifyAll();
 		}
 	}
-	
+
 	public DatagramSocket createNewSocket() throws SocketException {
 		return new DatagramSocket(port);
 	}
-	
+
 	public void listen() {
 		while (thisThread == this) {
 			try {
 				if (dataSocket != null) {
 					dataSocket.receive(dataPacket);
 					response();
-					break;						
+					break;
 				} else {
 					continue;
 				}
@@ -74,36 +75,37 @@ public class ConnectionListener extends Thread {
 			}
 		}
 	}
-	
+
 	public void response() {
 		byte[] ip = null;
 		try {
 			ip = InetAddress.getLocalHost().getHostName().getBytes();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
-		}		
+		}
 		DatagramPacket dataSend = null;
 		try {
-			dataSend = new DatagramPacket(ip, ip.length, dataPacket.getSocketAddress());
+			dataSend = new DatagramPacket(ip, ip.length,
+					dataPacket.getSocketAddress());
 		} catch (SocketException e1) {
 			e1.printStackTrace();
-		}		
+		}
 		try {
 			dataSocket.send(dataSend);
 		} catch (IOException e) {
 			e.printStackTrace();
-		}		
-		dataSocket.close();		
+		}
+		dataSocket.close();
 	}
-	
-	public void stopThread(){
+
+	public void stopThread() {
 		thisThread = null;
 		if (dataSocket != null) {
 			dataSocket.close();
-		}		
+		}
 	}
-	
-	public interface errorOnSystem{
+
+	public interface errorOnSystem {
 		public void errorDialog(String message);
 	}
 }

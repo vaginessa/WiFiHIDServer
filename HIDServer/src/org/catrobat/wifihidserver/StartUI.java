@@ -1,8 +1,11 @@
 package org.catrobat.wifihidserver;
 
+import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FontMetrics;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 
 import javax.swing.JFrame;
@@ -21,17 +24,13 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
-import org.catrobat.wifihidserver.Connection.ConnectionHandling;
 import org.catrobat.wifihidserver.ConnectionListener.errorOnSystem;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import java.awt.SystemColor;
-import java.awt.Color;
+import java.util.ResourceBundle;
 
 public class StartUI implements errorOnSystem {
 	private JFrame frame;
@@ -43,10 +42,11 @@ public class StartUI implements errorOnSystem {
 	private JTextPane textPaneIp;
 	private JTextPane textClientName;
 	private  final String downloadLink = "https://pocketcode.org";
+	private boolean errorDialogOnScreen = false;
+	private ResourceBundle bundle;
+	
+	public final static String bundleBaseName = "wifihidserver";
 
-	/**
-	 * @wbp.parser.entryPoint
-	 */
 	public static void main(String[] args) {
 		try {
 	        UIManager.setLookAndFeel(
@@ -78,6 +78,7 @@ public class StartUI implements errorOnSystem {
 	}
 
 	public void initialize() {
+		bundle = ResourceBundle.getBundle(bundleBaseName);
 		serverStarted = false;
 		serverStartable = true;
 		server = null;
@@ -93,50 +94,74 @@ public class StartUI implements errorOnSystem {
 		frame.getContentPane().setLayout(null);
 		frame.setResizable(false);
 
-		buttonStart = new JButton("");
+		buttonStart = new JButton("") {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void setText(String arg0) {
+			    super.setText(arg0);
+			    if(arg0.length() > 0 ) {
+				    FontMetrics metrics = getFontMetrics(getFont()); 
+				    int width = metrics.stringWidth( getText() );
+				    int height = metrics.getHeight();
+				    Dimension newDimension =  new Dimension(width + 40, height + 35);
+				    setPreferredSize(newDimension);
+				    setBounds(new Rectangle(getLocation(), getPreferredSize()));
+				    buttonStart.setAlignmentX(Component.CENTER_ALIGNMENT);
+				    centerComponent(buttonStart);
+			    }
+			}
+		};
 		buttonStart.setBackground(UIManager.getColor("Button.background"));
 		buttonStart.setFont(new Font("Dialog", Font.BOLD, 25));
 		buttonStart.addMouseListener(new MouseAdapter() {
+			
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				startServer();
 			}
 		});
 		buttonStart.setBounds(110, 67, 131, 64);
-		buttonStart.setText("START");
+		buttonStart.setText(bundle.getString("buttonStart"));
+		
 		frame.getContentPane().add(buttonStart);
 
 		JTextPane txtpnPort = new JTextPane();
+		txtpnPort.setEditable(false);
 		txtpnPort.setBackground(UIManager.getColor("Button.background"));
-		txtpnPort.setText("Port:");
+		txtpnPort.setText(bundle.getString("textPanePort"));
 		txtpnPort.setBounds(57, 195, 39, 21);
 		frame.getContentPane().add(txtpnPort);
 
 		JTextPane txtpnIpadresse = new JTextPane();
+		txtpnIpadresse.setEditable(false);
 		txtpnIpadresse.setBackground(UIManager.getColor("Button.background"));
-		txtpnIpadresse.setText("IP-Adresse:");
+		txtpnIpadresse.setText(bundle.getString("textPaneIpAddress"));
 		txtpnIpadresse.setBounds(57, 228, 82, 21);
 		frame.getContentPane().add(txtpnIpadresse);
 
-		JTextPane txtpnDesktopServer = new JTextPane();
-		txtpnDesktopServer.setFont(new Font("Dialog", Font.BOLD, 22));
-		txtpnDesktopServer.setBackground(UIManager
-				.getColor("Button.background"));
-		txtpnDesktopServer.setText("Desktop Server");
-		txtpnDesktopServer.setBounds(76, 12, 204, 30);
-		frame.getContentPane().add(txtpnDesktopServer);
+		JTextPane textpaneDesktopServer = new JTextPane();
+		textpaneDesktopServer.setEditable(false);
+		textpaneDesktopServer.setFont(new Font("Dialog", Font.BOLD, 22));
+		textpaneDesktopServer.setBackground(UIManager.getColor("Button.background"));
+		textpaneDesktopServer.setText(bundle.getString("pocketServer"));
+		StyledDocument doc = textpaneDesktopServer.getStyledDocument();
+		SimpleAttributeSet center = new SimpleAttributeSet();
+		StyleConstants.setAlignment(center, StyleConstants.ALIGN_CENTER);
+		doc.setParagraphAttributes(0, doc.getLength(), center, false);		
+		textpaneDesktopServer.setBounds(76, 12, 204, 30);
+		centerComponent(textpaneDesktopServer);
+		frame.getContentPane().add(textpaneDesktopServer);
 
 		textPaneIp = new JTextPane();
 		textPaneIp.setEditable(false);
-		textPaneIp
-				.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
+		textPaneIp.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
 		textPaneIp.setBounds(160, 228, 117, 21);
 		frame.getContentPane().add(textPaneIp);
 
 		textPanePort = new JTextPane();
 		textPanePort.setEditable(false);
-		textPanePort.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null,
-				null));
+		textPanePort.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
 		textPanePort.setBounds(160, 195, 68, 21);
 		frame.getContentPane().add(textPanePort);
 		
@@ -145,11 +170,13 @@ public class StartUI implements errorOnSystem {
 		textClientName.setFont(new Font("Dialog", Font.BOLD, 17));
 		textClientName.setBackground(UIManager.getColor("Button.background"));
 		textClientName.setBounds(36, 148, 274, 35);
-		textClientName.setText("(klicke START!)");
-		StyledDocument doc = textClientName.getStyledDocument();
-		SimpleAttributeSet center = new SimpleAttributeSet();
+		
+		textClientName.setText(bundle.getString("clickStart"));
+		doc = textClientName.getStyledDocument();
+		center = new SimpleAttributeSet();
 		StyleConstants.setAlignment(center, StyleConstants.ALIGN_CENTER);
 		doc.setParagraphAttributes(0, doc.getLength(), center, false);
+		centerComponent(textClientName);
 		frame.getContentPane().add(textClientName);
 	}
 
@@ -162,12 +189,31 @@ public class StartUI implements errorOnSystem {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
 	}
+	
+	public void centerComponent(Component component) {
+		Dimension frameSize = frame.getSize();
+		int left = (frameSize.width - component.getWidth()) / 2 ;
+		component.setLocation(left, component.getLocation().y);
+	}
 
 	public void errorDialog(String message) {
+		int dialogCanceled = JOptionPane.YES_NO_CANCEL_OPTION;
+		if (errorDialogOnScreen) {
+			return;
+		}		
+		errorDialogOnScreen = true;
 		JOptionPane.showMessageDialog(frame, message);
+		if(dialogCanceled == JOptionPane.NO_OPTION) {
+			System.out.println("now canceled");
+			errorDialogOnScreen = false;
+        }
 	}
 	
 	public void errorDialogWithLink(String[] message) {
+		int dialogCanceled = JOptionPane.YES_NO_CANCEL_OPTION;
+		if (errorDialogOnScreen) {
+			return;
+		}
 		JEditorPane ep = new JEditorPane("text/html", "<html><body style=\"" + "Google" + "\">" 
 	            + message[0] + "<a href>" + "\n" + message[1] + "</a>" 
 	            + message[2] + "</body></html>");
@@ -191,8 +237,11 @@ public class StartUI implements errorOnSystem {
 	    ep.setEditable(false);
 	    JLabel label = new JLabel();
 	    ep.setBackground(label.getBackground());
+	    errorDialogOnScreen = true;
 	    JOptionPane.showMessageDialog(null, ep);
-	    
+		if(dialogCanceled == JOptionPane.NO_OPTION) {
+			errorDialogOnScreen = false;
+        }
 	}
 
 	public void startServer() {
@@ -205,7 +254,7 @@ public class StartUI implements errorOnSystem {
 			}
 			serverStarted = true;
 			serverStartable = false;
-			buttonStart.setText("Stop");
+			buttonStart.setText(bundle.getString("stop"));
 			textClientName.setText("");
 		}
 	}
@@ -217,7 +266,7 @@ public class StartUI implements errorOnSystem {
 		} else {
 			textPaneIp.setText("");
 			textPanePort.setText("");
-			textClientName.setText("(klicke START!)");
+			textClientName.setText(bundle.getString("clickStart"));
 		}
 	}
 	
@@ -232,8 +281,8 @@ public class StartUI implements errorOnSystem {
 			server = null;
 			serverStarted = false;
 			serverStartable = true;
-			buttonStart.setText("Start");
+			buttonStart.setText(bundle.getString("start"));
 		}
-		textClientName.setText("Klicke START!");
+		textClientName.setText(bundle.getString("clickStart"));
 	}
 }

@@ -2,8 +2,9 @@ package org.catrobat.catroid.io;
 
 import java.io.Serializable;
 
-@SuppressWarnings("serial")
 public class Command implements Serializable {
+	private static final long serialVersionUID = 1L;
+
 	public static enum commandType {
 		SINGLE_KEY, KEY_COMBINATION, MOUSE
 	};
